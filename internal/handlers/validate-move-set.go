@@ -5,28 +5,32 @@ import (
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
+
+	"math/rand"
+	"time"
 )
 
 // JSON: { x, y }
-type Move struct {
+type move struct {
 	X int `json:"x" validate:"required"`
 	Y int `json:"y" validate:"required"`
 }
 
-// JSON: { size, moves: [{ x, y }] }
-type MoveSet struct {
+// JSON: { moves: [{ x, y }], score, size }
+type moveSet struct {
+	Moves []*move `json:"moves" validate:"required"`
+	Score int     `json:"score" validate:"min=0"`
 	Size  int     `json:"size" validate:"required,min=2"`
-	Moves []*Move `json:"moves" validate:"required,min=2"`
 }
 
-type ErrorResponse struct {
+type errorResponse struct {
 	FailedField string
 	Tag         string
 	Value       string
 }
 
-func validateMoveSetStruct(m MoveSet) []*ErrorResponse {
-	var errors []*ErrorResponse
+func validateMoveSetStruct(m moveSet) []*errorResponse {
+	var errors []*errorResponse
 
 	validate := validator.New()
 
@@ -35,7 +39,7 @@ func validateMoveSetStruct(m MoveSet) []*ErrorResponse {
 	if err != nil {
 		// _ = index
 		for _, currentErr := range err.(validator.ValidationErrors) {
-			var element ErrorResponse
+			var element errorResponse
 
 			// e.g.
 			// {
@@ -54,16 +58,16 @@ func validateMoveSetStruct(m MoveSet) []*ErrorResponse {
 	return errors
 }
 
-// Abs returns the absolute value of x.
-func Abs(x int) int {
-	if x < 0 {
-		return -x
+// abs returns the absolute value
+func abs(value int) int {
+	if value < 0 {
+		return -value
 	}
 
-	return x
+	return value
 }
 
-func validateMoveSet(m MoveSet) (bool, error) {
+func validateMoveSet(m moveSet) error {
 	moveSetSize := m.Size
 
 	for i := 0; i < len(m.Moves); i++ {
@@ -72,7 +76,7 @@ func validateMoveSet(m MoveSet) (bool, error) {
 		isWithinBounds := currentMove.X >= 0 && currentMove.X <= moveSetSize-1 && currentMove.Y >= 0 && currentMove.Y <= moveSetSize-1
 
 		if !isWithinBounds {
-			return false, fmt.Errorf("snake hit the wall: size=%dx%d moves[%d] { %d, %d }", moveSetSize, moveSetSize, i, currentMove.X, currentMove.Y)
+			return fmt.Errorf("snake hit the wall: size=%dx%d moves[%d] { %d, %d }", moveSetSize, moveSetSize, i, currentMove.X, currentMove.Y)
 		}
 
 		isSecondMoveAndAbove := i > 0
@@ -83,13 +87,13 @@ func validateMoveSet(m MoveSet) (bool, error) {
 			isPrevAndCurrentMoveSame := prevMove.X == currentMove.X && prevMove.Y == currentMove.Y
 
 			if isPrevAndCurrentMoveSame {
-				return false, fmt.Errorf("snake cannot stop: moves[%d] and moves[%d] { %d, %d }", i, i-1, currentMove.X, currentMove.Y)
+				return fmt.Errorf("snake cannot stop: moves[%d] and moves[%d] { %d, %d }", i, i-1, currentMove.X, currentMove.Y)
 			}
 
-			isPrevAndCurrentMoveAdjacent := (Abs(currentMove.X-prevMove.X) + Abs(currentMove.Y-prevMove.Y)) == 1
+			isPrevAndCurrentMoveAdjacent := (abs(currentMove.X-prevMove.X) + abs(currentMove.Y-prevMove.Y)) == 1
 
 			if !isPrevAndCurrentMoveAdjacent {
-				return false, fmt.Errorf("snake cannot move diagonally: moves[%d] { %d, %d } vs moves[%d] { %d, %d }", i, currentMove.X, currentMove.Y, i-1, prevMove.X, prevMove.Y)
+				return fmt.Errorf("snake cannot move diagonally: moves[%d] { %d, %d } vs moves[%d] { %d, %d }", i, currentMove.X, currentMove.Y, i-1, prevMove.X, prevMove.Y)
 			}
 
 			isThirdMoveAndAbove := i > 1
@@ -100,17 +104,29 @@ func validateMoveSet(m MoveSet) (bool, error) {
 				isMoveReversed := prevPrevMove.X == currentMove.X && prevPrevMove.Y == currentMove.Y
 
 				if isMoveReversed {
-					return false, fmt.Errorf("snake cannot reverse: moves[%d] { %d, %d } vs moves[%d] { %d, %d }", i, currentMove.X, currentMove.Y, i-2, prevPrevMove.X, prevPrevMove.Y)
+					return fmt.Errorf("snake cannot reverse: moves[%d] { %d, %d } vs moves[%d] { %d, %d }", i, currentMove.X, currentMove.Y, i-2, prevPrevMove.X, prevPrevMove.Y)
 				}
 			}
 		}
 	}
 
-	return true, nil
+	return nil
+}
+
+func generateRandomFruit(size int, excludeFruit *move) move {
+	newRand := rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	randomFruit := move{X: newRand.Intn(size), Y: newRand.Intn(size)}
+
+	if excludeFruit != nil && randomFruit.X == excludeFruit.X && randomFruit.Y == excludeFruit.Y {
+		return generateRandomFruit(size, excludeFruit)
+	}
+
+	return randomFruit
 }
 
 func ValidateMoveSet(c *fiber.Ctx) error {
-	var moveSet MoveSet
+	var moveSet moveSet
 
 	// { size: 2, moves: [{0, 0}, {1, 0}, ..., {x, y}] }
 	if err := c.BodyParser(&moveSet); err != nil {
@@ -123,33 +139,27 @@ func ValidateMoveSet(c *fiber.Ctx) error {
 		return c.JSON(errors)
 	}
 
-	isValid, err := validateMoveSet(moveSet)
+	err := validateMoveSet(moveSet)
 
 	if err != nil {
-		return c.JSON(fiber.Map{"isValid": isValid, "message": err.Error()})
+		return c.JSON(fiber.Map{"isValid": false, "message": err.Error()})
 
 	}
 
-	return c.JSON(fiber.Map{"isValid": isValid})
+	// Initially, snake will always start at {0, 0}. Likewise, new fruit must not spawn here
+	prevFruit := move{X: 0, Y: 0}
+
+	hasMoves := len(moveSet.Moves) > 0
+
+	if hasMoves {
+		prevFruit = *moveSet.Moves[len(moveSet.Moves)-1]
+	}
+
+	newFruit := generateRandomFruit(moveSet.Size, &prevFruit)
+
+	if hasMoves {
+		return c.JSON(fiber.Map{"isValid": true, "fruitX": newFruit.X, "fruitY": newFruit.Y, "score": moveSet.Score + 1})
+	}
+
+	return c.JSON(fiber.Map{"isValid": true, "fruitX": newFruit.X, "fruitY": newFruit.Y})
 }
-
-// func GetAllProducts(c *fiber.Ctx) error {
-// 	var products []*Product
-
-// 	// await cur.forEach((p) => {
-// 	// 	products.push(p);
-// 	// })
-// 	for cur.Next(context.TODO()) {
-// 		var p Product
-
-// 		err := cur.Decode(&p)
-
-// 		if err != nil {
-// 			return err
-// 		}
-
-// 		products = append(products, &p)
-// 	}
-
-// 	return c.JSON(products)
-// }

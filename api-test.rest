@@ -1,151 +1,292 @@
+# Start a new snake game
+http://localhost:3000/new?w=2&h=2
+
+###
+# Invalid method
+POST http://localhost:3000/new?w=2&h=2
+
+###
+# Internal server error
+http://localhost:3000/new?w=a&h=2
+
 ###
 # Valid move set
-POST http://localhost:3000/api/validate-move-set
+POST http://localhost:3000/validate
 Content-Type: application/json
 
 {
-    "moves": [
-        {
-            "x": 1,
-            "y": 1
-        },
-        {
-            "x": 1,
-            "y": 0
-        },
-        {
-            "x": 0,
-            "y": 0
-        },
-        {
-            "x": 0,
-            "y": 1
-        }
-    ],
-    "score": 0,
-    "size": 3
-}
-
-###
-# Out of bound move set
-POST http://localhost:3000/api/validate-move-set
-Content-Type: application/json
-
-{
-    "moves": [
-        {
-            "x": 1,
-            "y": 1
-        },
-        {
-            "x": 1,
-            "y": 2
-        }
-    ],
-    "score": 0,
-    "size": 2
-}
-
-###
-# Out of bound move set (negative)
-POST http://localhost:3000/api/validate-move-set
-Content-Type: application/json
-
-{
-    "moves": [
-        {
-            "x": -1,
-            "y": 1
-        },
-        {
-            "x": 1,
-            "y": 1
-        }
-    ],
-    "score": 0,
-    "size": 2
-}
-
-###
-# Repeated move set
-POST http://localhost:3000/api/validate-move-set
-Content-Type: application/json
-
-{
-    "moves": [
-        {
-            "x": 1,
-            "y": 1
-        },
-        {
-            "x": 1,
-            "y": 0
-        },
-        {
-            "x": 1,
-            "y": 0
-        },
-        {
-            "x": 0,
-            "y": 1
-        }
-    ],
-    "score": 0,
-    "size": 3
-}
-
-###
-# Not adjacent move set
-POST http://localhost:3000/api/validate-move-set
-Content-Type: application/json
-
-{
-    "moves": [
-        {
-            "x": 1,
-            "y": 1
-        },
-        {
-            "x": 1,
-            "y": 0
-        },
-        {
+    "state": {
+        "gameId": "cd592766-62de-44be-a0fb-9ffb2dbaf785",
+        "width": 2,
+        "height": 2,
+        "score": 0,
+        "fruit": {
             "x": 0,
             "y": 1
         },
-        {
-            "x": 1,
-            "y": 1
+        "snake": {
+            "x": 0,
+            "y": 0,
+            "velX": 1,
+            "velY": 0
         }
-    ],
-    "score": 0,
-    "size": 3
+    },
+    "ticks": [
+        {
+            "velX": 1,
+            "velY": 0
+        },
+        {
+            "velX": 0,
+            "velY": 1
+        },
+        {
+            "velX": -1,
+            "velY": 0
+        }
+    ]
 }
 
 ###
-# Reversed move set
-POST http://localhost:3000/api/validate-move-set
+# Invalid method
+GET http://localhost:3000/validate
+
+###
+# Internal server error
+POST http://localhost:3000/validate
 Content-Type: application/json
 
 {
-    "moves": [
-        {
-            "x": 1,
+    "state": {
+        "width": "2"
+    },
+    "ticks": []
+}
+
+###
+# Snake went out of bounds
+POST http://localhost:3000/validate
+Content-Type: application/json
+
+{
+    "state": {
+        "gameId": "cd592766-62de-44be-a0fb-9ffb2dbaf785",
+        "width": 2,
+        "height": 2,
+        "score": 0,
+        "fruit": {
+            "x": 0,
             "y": 1
         },
-        {
-            "x": 1,
-            "y": 0
-        },
-        {
+        "snake": {
             "x": 0,
-            "y": 0
+            "y": 0,
+            "velX": 1,
+            "velY": 0
+        }
+    },
+    "ticks": [
+        {
+            "velX": 1,
+            "velY": 0
         },
         {
-            "x": 1,
-            "y": 0
+            "velX": 0,
+            "velY": 1
+        },
+        {
+            "velX": 0,
+            "velY": 1
         }
-    ],
-    "score": 0,
-    "size": 3
+    ]
+}
+
+###
+# Snake went out of bounds (negative)
+POST http://localhost:3000/validate
+Content-Type: application/json
+
+{
+    "state": {
+        "gameId": "cd592766-62de-44be-a0fb-9ffb2dbaf785",
+        "width": 2,
+        "height": 2,
+        "score": 0,
+        "fruit": {
+            "x": 0,
+            "y": 1
+        },
+        "snake": {
+            "x": 0,
+            "y": 0,
+            "velX": 1,
+            "velY": 0
+        }
+    },
+    "ticks": [
+        {
+            "velX": 1,
+            "velY": 0
+        },
+        {
+            "velX": 0,
+            "velY": 1
+        },
+        {
+            "velX": -1,
+            "velY": 0
+        },
+        {
+            "velX": -1,
+            "velY": 0
+        }
+    ]
+}
+
+###
+# Snake stopped moving
+POST http://localhost:3000/validate
+Content-Type: application/json
+
+{
+    "state": {
+        "gameId": "cd592766-62de-44be-a0fb-9ffb2dbaf785",
+        "width": 2,
+        "height": 2,
+        "score": 0,
+        "fruit": {
+            "x": 0,
+            "y": 1
+        },
+        "snake": {
+            "x": 0,
+            "y": 0,
+            "velX": 1,
+            "velY": 0
+        }
+    },
+    "ticks": [
+        {
+            "velX": 1,
+            "velY": 0
+        },
+        {
+            "velX": 0,
+            "velY": 1
+        },
+        {
+            "velX": 0,
+            "velY": 0
+        }
+    ]
+}
+
+###
+# Snake moved diagonally
+POST http://localhost:3000/validate
+Content-Type: application/json
+
+{
+    "state": {
+        "gameId": "cd592766-62de-44be-a0fb-9ffb2dbaf785",
+        "width": 2,
+        "height": 2,
+        "score": 0,
+        "fruit": {
+            "x": 0,
+            "y": 1
+        },
+        "snake": {
+            "x": 0,
+            "y": 0,
+            "velX": 1,
+            "velY": 0
+        }
+    },
+    "ticks": [
+        {
+            "velX": 1,
+            "velY": 0
+        },
+        {
+            "velX": 0,
+            "velY": 1
+        },
+        {
+            "velX": -1,
+            "velY": 1
+        }
+    ]
+}
+
+###
+# Snake made 180-degree turn
+POST http://localhost:3000/validate
+Content-Type: application/json
+
+{
+    "state": {
+        "gameId": "cd592766-62de-44be-a0fb-9ffb2dbaf785",
+        "width": 2,
+        "height": 2,
+        "score": 0,
+        "fruit": {
+            "x": 0,
+            "y": 1
+        },
+        "snake": {
+            "x": 0,
+            "y": 0,
+            "velX": 1,
+            "velY": 0
+        }
+    },
+    "ticks": [
+        {
+            "velX": 1,
+            "velY": 0
+        },
+        {
+            "velX": 0,
+            "velY": 1
+        },
+        {
+            "velX": 0,
+            "velY": -1
+        }
+    ]
+}
+
+###
+# Fruit not found
+POST http://localhost:3000/validate
+Content-Type: application/json
+
+{
+    "state": {
+        "gameId": "cd592766-62de-44be-a0fb-9ffb2dbaf785",
+        "width": 2,
+        "height": 2,
+        "score": 0,
+        "fruit": {
+            "x": 0,
+            "y": 1
+        },
+        "snake": {
+            "x": 0,
+            "y": 0,
+            "velX": 1,
+            "velY": 0
+        }
+    },
+    "ticks": [
+        {
+            "velX": 1,
+            "velY": 0
+        },
+        {
+            "velX": 0,
+            "velY": 1
+        }
+    ]
 }

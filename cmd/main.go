@@ -13,7 +13,8 @@ func main() {
 	// app.use(express.json())
 	app := fiber.New()
 
-	app.Post("/api/validate-move-set", handlers.ValidateMoveSet)
+	app.Get("/new", handlers.CreateNewGame)
+	app.Post("/validate", handlers.ValidateMoveSet)
 
 	// try { app.listen(3000) } catch (err) { console.log(err); process.exit(1) }
 	log.Fatal(app.Listen(":3000"))

@@ -7,7 +7,7 @@ This project demonstrates a basic REST API using Go & Fiber. See `api-test.rest`
 ```bash
 go mod init github.com/nubrid/go-api-snake-demo
 
-go get -u github.com/gofiber/fiber/v2 github.com/go-playground/validator/v10
+go get -u github.com/go-playground/validator/v10 github.com/gofiber/fiber/v2 github.com/google/uuid
 
 npx kill-port 3000 && go run cmd/main.go
 ```
